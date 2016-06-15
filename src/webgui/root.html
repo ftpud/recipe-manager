@@ -1,0 +1,244 @@
+<html>
+    <head>
+        <title>Recipes</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>       
+        <style>
+            html * {
+                font-family: tahoma;
+            }
+            
+            body {
+                
+            }
+            
+            .menu_item:hover {
+                background-color: #AAAAAA;         
+            }
+            .menu_item {
+                margin: 2px;
+                margin-top: 8px;
+                padding: 3px;          
+                cursor: pointer;
+                font-weight: bold;
+                text-transform: capitalize;
+                
+            }
+            .menu {
+                width: 200px;
+                background-color: #FFFFFF;                
+                border: 1px solid lightgrey;
+                margin: 10px;
+                padding: 10px;
+                letter-spacing: 2px;
+            }
+            
+            .menu_header
+            {
+                 width: 200px;
+                background-color: #EEE;                
+                border: 1px solid lightgrey;
+                margin:  3px 10px -11px 10px;
+                
+                padding: 10px;
+                letter-spacing: 2px;                
+            }
+            
+            #wrapper {
+                float: left;
+                margin: 10px;
+
+                
+            }
+            
+            #recipe_header {
+                font-size: xx-large;
+                font-weight: bold;
+                
+                text-transform: capitalize;
+                letter-spacing: 4px;
+                color: #333;
+                    
+                margin: 20px;
+                margin-left: 4px;
+                
+            }
+            .recipe {
+                float: left;
+                width: 600px;
+                background-color: white;
+                margin: 3px 10px 10px 10px;
+                padding: 10px;                
+                border: 1px solid lightgrey;
+            }
+            
+            #recipe_box {
+                float: left;
+                margin-top: 30px;
+            }
+            
+            #recipe_box p {                
+                text-indent: 10px;
+            }
+            
+            .product_comment {
+                float:left;
+                width: 300px;
+                text-align: right;
+            }
+            
+            .product_name {
+                width: 290px;
+                letter-spacing: 1px;
+                float:left;
+                text-transform: capitalize;
+            }
+            .product_info {
+               color: gray;
+               float:left;
+               margin: 5px;
+               border-bottom: 1px dashed gray;
+            }
+            
+            .recipe_image {
+                width: 599px;
+                float:left;
+                clear:both;
+                margin-bottom: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        
+        <div id="wrapper">
+            
+            <div class="menu_header">
+                Category
+            </div>
+            <div class="menu" id="groups">
+               
+            </div>      
+                    
+            <div class="menu_header">
+                Ingredients
+            </div>
+            <div class="menu" id="products">
+              
+            </div> 
+        
+        </div>
+        
+        <div id="wrapper">
+            <div class="menu_header">
+                Recipes
+            </div>
+            <div class="menu" id="recipe_list">              
+                
+            </div>        
+        </div>
+        
+        <div id="wrapper">
+            <div class="recipe" id="recipe">    
+                <div id="recipe_header">
+                    
+                </div>
+                <div id="product_box">
+                    
+                </div>
+                <div id="recipe_box">
+                    
+                </div>
+            </div>        
+        </div>
+       
+        
+        <script>
+            var groups = [];
+            var recipes = [];
+            function UpdateRecipeText(id)
+            {
+                $("#product_box").html("");
+                var recipe = recipes[id]["recipe"];
+                recipe = recipe.replace(/(http:\/\/\S+(\.png|\.jpg|\.gif))/g, '<img src="$1" class=recipe_image />');
+                var parts = recipe.split("\n");
+                recipe = parts.join("</p><p>");
+                recipe = "<p>" + recipe + "</p>";
+                
+                $("#recipe_header").html(recipes[id]["name"]);
+                $("#recipe_box").html(recipe);                                
+                $.each(recipes[id]["products"], function(key,val)
+                {
+                    
+                    $("#product_box").append("<div class=product_info><div class=product_name>" + val["name"] + "</div><div class=product_comment>" + val["comment"] + "</div></div>");
+                });
+                
+            }
+            
+            function UpdateRecipeByProductId(id)
+            {                               
+               $.ajax({
+               dataType: "json",
+               url: "/api/getRecipeByProductId",
+               data: id.toString(),
+                   success: function(data)
+                   {                   
+                     $("#recipe_list").html("");
+                     var id=0;
+                     $.each(data["recipes"], function(key,val)
+                     {
+                         recipes[id]=val;
+                        $("#recipe_list").append('<div class="menu_item" onclick="UpdateRecipeText('+id+')">'+val["name"]+'</div>');
+                        id++;
+                     })
+                   }
+                });  
+            }
+            
+            function UpdateRecipeList(filter)
+            {                
+               $.ajax({
+               dataType: "json",
+               url: "/api/getRecipeByGroup",
+                   data: groups[filter],
+                   success: function(data)
+                   {                   
+                     $("#recipe_list").html("");
+                     var id=0;
+                     $.each(data["recipes"], function(key,val)
+                     {
+                         recipes[id]=val;
+                        $("#recipe_list").append('<div class="menu_item" onclick="UpdateRecipeText('+id+')">'+val["name"]+'</div>');
+                        id++;
+                     })
+                   }
+                });  
+            }
+            
+           $.ajax({
+               dataType: "json",
+               url: "/api/getProductList",
+               success: function(data)
+               {                   
+                   $.each(data["products"], function(key,val)
+                   {
+                       $("#products").append('<div class="menu_item" onclick="UpdateRecipeByProductId(' + val["id"] + ')" >'+val["name"]+'</div>');
+                   })
+               }
+           });  
+           
+            $.ajax({
+               dataType: "json",
+               url: "/api/getGroupList",
+               success: function(data)
+               {               
+                   var id=0;
+                   $.each(data["groups"], function(key,val)
+                   {
+                       groups[id] = val;                       
+                       $("#groups").append('<div class="menu_item" onclick="UpdateRecipeList(' + id + ')">'+val+'</div>');
+                       id++;
+                   })
+               }
+           });  
+        </script>
+    </body>         
+</html>
